@@ -1,0 +1,59 @@
+name: Claude Code Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-response:
+    # Only run if the comment contains @claude or if it's a PR
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      github.event_name == 'pull_request'
+    
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      
+    steps:
+      - name: Claude Code Action
+        uses: anthropics/claude-code-action@beta
+        with:
+          # Authentication - choose one of the following:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # claude_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Optional: Configure Claude's behavior
+          model: claude-3-5-sonnet-20241022
+          max_tokens: 4000
+          
+          # Optional: Customize response behavior
+          auto_reply: true
+          include_conversation_context: true
+          
+          # Optional: File filtering (uncomment to limit which files Claude can see)
+          # include_patterns: |
+          #   src/**/*.{ts,tsx,js,jsx}
+          #   *.{md,json,yml,yaml}
+          # exclude_patterns: |
+          #   node_modules/**
+          #   dist/**
+          #   build/**
+          #   .next/**
+          #   coverage/**
+          
+          # Optional: Custom system prompt to add context about your project
+          # system_prompt: |
+          #   This is a React/Next.js project for UI component generation.
+          #   Key technologies: Next.js 15, React 19, TypeScript, Tailwind CSS, Prisma.
+          #   The app uses a virtual file system to generate components with AI assistance.
