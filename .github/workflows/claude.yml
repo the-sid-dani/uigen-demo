@@ -24,36 +24,31 @@ jobs:
       pull-requests: write
       
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
       - name: Claude Code Action
         uses: anthropics/claude-code-action@beta
         with:
-          # Authentication - choose one of the following:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # claude_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          
           github_token: ${{ secrets.GITHUB_TOKEN }}
           
-          # Optional: Configure Claude's behavior
+          # Configure Claude's behavior
           model: claude-3-5-sonnet-20241022
-          max_tokens: 4000
           
-          # Optional: Customize response behavior
-          auto_reply: true
-          include_conversation_context: true
-          
-          # Optional: File filtering (uncomment to limit which files Claude can see)
-          # include_patterns: |
-          #   src/**/*.{ts,tsx,js,jsx}
-          #   *.{md,json,yml,yaml}
-          # exclude_patterns: |
-          #   node_modules/**
-          #   dist/**
-          #   build/**
-          #   .next/**
-          #   coverage/**
-          
-          # Optional: Custom system prompt to add context about your project
-          # system_prompt: |
-          #   This is a React/Next.js project for UI component generation.
-          #   Key technologies: Next.js 15, React 19, TypeScript, Tailwind CSS, Prisma.
-          #   The app uses a virtual file system to generate components with AI assistance.
+          # Custom instructions for your project
+          custom_instructions: |
+            This is a React/Next.js project for UI component generation called UIGen.
+            Key technologies: Next.js 15, React 19, TypeScript, Tailwind CSS v4, Prisma with SQLite.
+            
+            The app uses a virtual file system to generate components with AI assistance.
+            All generated components should follow the creative styling guidelines in the generation prompt.
+            
+            When creating components:
+            - Use distinctive color palettes (avoid generic blue/gray)
+            - Implement creative animations and micro-interactions
+            - Focus on modern, engaging designs with personality
+            - Ensure mobile responsiveness
+            - Follow the existing code patterns and conventions
