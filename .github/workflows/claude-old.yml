@@ -1,0 +1,83 @@
+name: Claude Code Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-response:
+    # Only run if the comment contains @claude or if it's a PR
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      github.event_name == 'pull_request'
+    
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Project Setup
+        run: |
+          npm run setup
+          npm run dev:daemon
+          
+      - name: Claude Code Action
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Configure Claude's behavior
+          model: claude-3-5-sonnet-20241022
+          
+          # Custom instructions for your project
+          custom_instructions: |
+            This is a React/Next.js project for UI component generation called UIGen.
+            Key technologies: Next.js 15, React 19, TypeScript, Tailwind CSS v4, Prisma with SQLite.
+            
+            The project is already set up with all dependencies installed.
+            The server is already running at localhost:3000. Logs from it
+            are being written to logs.txt. If needed, you can query the
+            db with the 'sqlite3' cli. If needed, use the mcp__playwright
+            set of tools to launch a browser and interact with the app.
+            
+            The app uses a virtual file system to generate components with AI assistance.
+            All generated components should follow the creative styling guidelines in the generation prompt.
+            
+            When creating components:
+            - Use distinctive color palettes (avoid generic blue/gray)
+            - Implement creative animations and micro-interactions
+            - Focus on modern, engaging designs with personality
+            - Ensure mobile responsiveness
+            - Follow the existing code patterns and conventions
+            
+          # MCP Server Configuration for browser automation
+          mcp_config: |
+            {
+              "mcpServers": {
+                "playwright": {
+                  "command": "npx",
+                  "args": [
+                    "@playwright/mcp@latest",
+                    "--allowed-origins",
+                    "localhost:3000;cdn.tailwindcss.com;esm.sh"
+                  ]
+                }
+              }
+            }
+            
+          # Allowed tools including all Playwright MCP tools
+          allowed_tools: "Bash(npm:*),Bash(sqlite3:*),mcp__playwright__browser_snapshot,mcp__playwright__browser_click,mcp__playwright__navigate,mcp__playwright__screenshot,mcp__playwright__click,mcp__playwright__click_and_switch_tab,mcp__playwright__iframe_click,mcp__playwright__iframe_fill,mcp__playwright__hover,mcp__playwright__fill,mcp__playwright__select,mcp__playwright__upload_file,mcp__playwright__evaluate,mcp__playwright__console_logs,mcp__playwright__close,mcp__playwright__expect_response,mcp__playwright__assert_response,mcp__playwright__custom_user_agent,mcp__playwright__get_visible_text,mcp__playwright__get_visible_html,mcp__playwright__go_back,mcp__playwright__go_forward,mcp__playwright__drag,mcp__playwright__press_key,mcp__playwright__save_as_pdf,mcp__playwright__wait_for_selector,mcp__playwright__wait_for_load_state,mcp__playwright__new_page,mcp__playwright__get_page_title,mcp__playwright__get_url,mcp__playwright__reload,mcp__playwright__set_viewport_size"
